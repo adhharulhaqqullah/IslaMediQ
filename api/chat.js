@@ -71,7 +71,20 @@ export default async function handler(req, res) {
 
   try {
     // Build conversation contents for Gemini
-    const contents = buildContents(message, history || []);
+    const baseContents = buildContents(message, history || []);
+
+    // Gabungkan SYSTEM_PROMPT di awal array contents agar terbaca oleh versi v1
+    const contentsPayload = [
+      {
+        role: 'user',
+        parts: [{ text: `Instruksi Karakter Sistem (Patuhi ini): ${SYSTEM_PROMPT}` }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: "Baik, saya mengerti. Saya akan menjawab sebagai Khusnuzon sesuai instruksi medis Islami tersebut." }]
+      },
+      ...baseContents
+    ];
 
     // Call Gemini API
     const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
@@ -80,10 +93,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        contents,
+        contents: contentsPayload, // Gunakan payload yang sudah digabung
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
