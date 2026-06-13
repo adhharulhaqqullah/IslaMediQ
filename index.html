@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="IslaMediQ — Platform Layanan Literasi dan Pendampingan Kesehatan Digital Berbasis Prinsip Islam. Menjembatani kedokteran modern dengan kearifan Thibbun Nabawi." />
+  <meta name="theme-color" content="#0d6b3d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="IslaMediQ — Platform Kesehatan Digital Islami" />
+  <meta property="og:description" content="Pendampingan kesehatan komprehensif yang menyelaraskan ilmu kedokteran modern dengan Thibbun Nabawi." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/logo.png" />
+  
+  <title>IslaMediQ — Platform Kesehatan Digital Islami</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  
+  <!-- Preconnect Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <p class="bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+    <div class="logo-pulse">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="36" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none"/>
+        <path d="M40 12 C40 12, 56 20, 56 36 C56 52, 40 64, 40 64 C40 64, 24 52, 24 36 C24 20, 40 12, 40 12Z" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <path d="M32 36 L38 42 L48 30" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <p class="loading-text">Memuat IslaMediQ...</p>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- App Root -->
+  <div id="app"></div>
+
+  <!-- Main Script -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
