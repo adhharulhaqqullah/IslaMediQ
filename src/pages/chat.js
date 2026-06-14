@@ -9,15 +9,6 @@ import { addPoints } from '../services/gamification.js';
 
 let chatHistory = [];
 
-const SUGGESTIONS = [
-  'Apa manfaat madu untuk kesehatan?',
-  'Bagaimana cara mengobati flu secara alami?',
-  'Apa sunnah Rasulullah untuk menjaga kesehatan?',
-  'Apakah bekam/hijamah aman dilakukan?',
-  'Apa manfaat puasa bagi tubuh?',
-  'Bagaimana tips menjaga imunitas tubuh?',
-];
-
 // Daftar kata kunci gejala untuk auto-suggest
 const GEJALA_KEYWORDS = [
   'demam', 'panas', 'meriang',
@@ -62,11 +53,6 @@ export function render() {
         </div>
       </div>
 
-      <!-- Suggestions -->
-      <div class="chat-suggestions" id="chatSuggestions">
-        ${SUGGESTIONS.map(s => `<button class="chip suggestion-chip">${s}</button>`).join('')}
-      </div>
-
       <!-- Input -->
       <div class="chat-input-area">
         <textarea id="chatInput" placeholder="Ceritakan gejala Anda (misalnya: demam, batuk, pusing, sakit perut, mual, atau luka)..." rows="1"></textarea>
@@ -84,7 +70,6 @@ export function onMount() {
   const messagesEl = document.getElementById('chatMessages');
   const inputEl = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
-  const suggestionsEl = document.getElementById('chatSuggestions');
   const clearBtn = document.getElementById('clearChatBtn');
   const keywordSuggestionsEl = document.getElementById('keywordSuggestions');
 
@@ -96,7 +81,6 @@ export function onMount() {
       else appendAIMessage(msg.text);
     });
     scrollToBottom();
-    if (suggestionsEl) suggestionsEl.style.display = 'none';
   }
 
   // Send message
@@ -106,7 +90,6 @@ export function onMount() {
 
     inputEl.value = '';
     inputEl.style.height = 'auto';
-    if (suggestionsEl) suggestionsEl.style.display = 'none';
 
     appendUserMessage(text);
     chatHistory.push({ role: 'user', text });
@@ -182,13 +165,7 @@ export function onMount() {
     }
   });
 
-  // Suggestion chips
-  document.querySelectorAll('.suggestion-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      inputEl.value = chip.textContent;
-      handleSend();
-    });
-  });
+
 
   // Clear chat
   clearBtn.addEventListener('click', () => {
@@ -198,7 +175,6 @@ export function onMount() {
       // Keep welcome message, remove the rest
       const msgs = messagesEl.querySelectorAll('.chat-message');
       msgs.forEach((m, i) => { if (i > 0) m.remove(); });
-      if (suggestionsEl) suggestionsEl.style.display = 'flex';
     }
   });
 
