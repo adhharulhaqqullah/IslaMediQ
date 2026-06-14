@@ -1,5 +1,5 @@
 /* ============================================================
-   IslaMediQ — Main Application Bootstrap
+   IslaMediQ — Main Application Bootstrap (With Supabase Auth)
    ============================================================ */
 
 // Styles
@@ -8,10 +8,11 @@ import './styles/components.css';
 import './styles/pages.css';
 
 // Core
-import { addRoute, initRouter } from './router.js';
-import { getState, subscribe, checkDailyReset } from './store.js';
+import { addRoute, initRouter, navigateTo, getCurrentRoute } from './router.js';
+import { getState, setState, subscribe, checkDailyReset } from './store.js';
+import { supabase } from './services/supabase.js';
 
-// Pages (lazy-ish — they're still bundled but organized as modules)
+// Pages
 import * as Landing from './pages/landing.js';
 import * as Dashboard from './pages/dashboard.js';
 import * as Chat from './pages/chat.js';
@@ -21,6 +22,7 @@ import * as Scanner from './pages/scanner.js';
 import * as Forum from './pages/forum.js';
 import * as Encyclopedia from './pages/encyclopedia.js';
 import * as Profile from './pages/profile.js';
+import * as Auth from './pages/auth.js'; // Impor halaman auth baru
 
 // Services
 import { startReminderChecks } from './services/notifications.js';
@@ -32,6 +34,7 @@ function initApp() {
 
   // Register routes
   addRoute('/', Landing);
+  addRoute('/auth', Auth); // Tambahkan jalur rute autentikasi
   addRoute('/dashboard', Dashboard);
   addRoute('/chat', Chat);
   addRoute('/sick-mode', SickMode);
@@ -40,6 +43,31 @@ function initApp() {
   addRoute('/forum', Forum);
   addRoute('/encyclopedia', Encyclopedia);
   addRoute('/profile', Profile);
+
+  // 🔐 LISTEN STATUS AUTENTIKASI SUPABASE (Real-time Sync)
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      // Jika berhasil masuk, sinkronisasi data user Supabase ke store.js
+      setState('user', {
+        name: session.user.user_metadata.full_name || session.user.email.split('@')[0],
+        email: session.user.email,
+        joinDate: session.user.created_at,
+        isLoggedIn: true
+      });
+      
+      // Jika user tidak sengaja terdampar di halaman auth padahal sudah login, lempar ke dashboard
+      if (getCurrentRoute() === '/auth') {
+        navigateTo('/dashboard');
+      }
+    } else {
+      // Jika logout / tidak ada sesi, kembalikan data default store.js
+      setState('user', {
+        name: 'Pengguna IslaMediQ',
+        joinDate: new Date().toISOString(),
+        isLoggedIn: false
+      });
+    }
+  });
 
   // Apply sick mode if active
   if (getState('sickMode')) {
@@ -66,7 +94,6 @@ function initApp() {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
       loadingScreen.classList.add('loaded');
-      // Remove from DOM after animation
       setTimeout(() => loadingScreen.remove(), 600);
     }
   }, 800);
