@@ -124,10 +124,10 @@ export function render() {
            <a href="#fitur" data-section="fitur">Fitur</a>
            <a href="#tentang" data-section="tentang">Tentang</a>
            <a href="#kontak" data-section="kontak">Kontak</a>
-           <button class="btn btn-ghost btn-sm" data-link="/dashboard">Login</button>
-           <button class="btn btn-primary btn-sm" data-link="/dashboard">Daftar</button>
-         </div>
-         <button class="btn btn-primary btn-sm hide-desktop" data-link="/dashboard">Daftar</button>
+           <button class="btn btn-ghost btn-sm" data-link="/auth">Login</button>
+           <button class="btn btn-primary btn-sm" data-link="/auth">Daftar</button>
+        </div>
+        <button class="btn btn-primary btn-sm hide-desktop" data-link="/auth">Daftar</button>
 
       <!-- ─── Hero ─── -->
       <section class="hero-section">
