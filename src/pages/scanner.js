@@ -1,15 +1,208 @@
 /* ============================================================
-   IslaMediQ — Smart Scanner Page
-   Barcode + ingredient analysis + halal status
+   IslaMediQ — Smart Scanner Page (Rule-Based Embedded Database)
+   Barcode + ingredient analysis + halal status + Thibbun Nabawi
+   100% Mandiri, Bebas Limit, Instan, dan Berjalan Lokal
    ============================================================ */
 
 import { getState, setState } from '../store.js';
-import { initScanner, stopScanner, analyzeIngredients, checkHalalStatus, saveScanResult } from '../services/scanner-service.js';
+import { initScanner, stopScanner, saveScanResult } from '../services/scanner-service.js'; // Hanya ambil controller kamera dasar
 import { addPoints } from '../services/gamification.js';
 import { showToast } from '../services/notifications.js';
 import { encyclopediaArticles } from '../data/encyclopedia.js';
 
 let scannerRunning = false;
+
+// 1. DATABASE KANDUNGAN BAHAN, E-NUMBER, DAN THIBBUN NABAWI EMBEDDED
+const KNOWLEDGE_BASE_SCANNER = {
+  // --- E-Numbers / Aditif ---
+  e471: {
+    type: 'ingredient',
+    name: 'Mono- and Diglycerides of Fatty Acids',
+    code: 'E471',
+    status: 'syubhat',
+    label: 'Syubhat / Syubhah',
+    emoji: '⚠️',
+    reason: 'Bisa berasal dari lemak nabati (halal) atau lemak hewani termasuk babi (haram). Wajib memastikan logo halal resmi dari produsen.',
+    thibbuNabawi: []
+  },
+  e120: {
+    type: 'ingredient',
+    name: 'Carmine / Cochineal (Pewarna Merah Alami)',
+    code: 'E120',
+    status: 'halal',
+    label: 'Halal (Fatwa MUI)',
+    emoji: '✅',
+    reason: 'Berasal dari serangga Cochineal. Berdasarkan Fatwa MUI No. 30 Tahun 2011, pewarna ini halal dan suci selama tidak membahayakan.',
+    thibbuNabawi: []
+  },
+  e441: {
+    type: 'ingredient',
+    name: 'Gelatin (Hewani)',
+    code: 'E441',
+    status: 'syubhat',
+    label: 'Syubhat / Perlu Cek',
+    emoji: '⚠️',
+    reason: 'Apabila bersumber dari tulang/kulit sapi yang disembelih secara syar\'i maka halal. Jika bersumber dari babi maka haram.',
+    thibbuNabawi: []
+  },
+  e904: {
+    type: 'ingredient',
+    name: 'Shellac (Agen Pengkilap)',
+    code: 'E904',
+    status: 'halal',
+    label: 'Halal',
+    emoji: '✅',
+    reason: 'Ekskresi resin dari serangga Kerria lacca, suci dan aman digunakan sebagai pelapis makanan/permen.',
+    thibbuNabawi: []
+  },
+
+  // --- Bahan Umum & Thibbun Nabawi ---
+  madu: {
+    type: 'ingredient',
+    name: 'Madu Murni (Pure Honey)',
+    code: '',
+    status: 'halal',
+    label: 'Halal Murni',
+    emoji: '✅',
+    reason: 'Cairan alami kaya nutrisi yang dihasilkan oleh lebah madu, suci dan 100% halal dikonsumsi.',
+    thibbuNabawi: [
+      {
+        name: 'Madu',
+        nameAr: 'العسل',
+        benefits: 'Sangat baik untuk menjaga sistem pencernaan, mengencerkan dahak, agen penyembuh luka, dan meningkatkan imunitas tubuh.',
+        hadith: 'Hendaklah kalian menggunakan dua obat: madu dan Al-Qur\'an. (HR. Ibnu Majah no. 3452, Shahih).'
+      }
+    ]
+  },
+  zaitun: {
+    type: 'ingredient',
+    name: 'Minyak Zaitun (Olive Oil)',
+    code: '',
+    status: 'halal',
+    label: 'Halal Murni',
+    emoji: '✅',
+    reason: 'Minyak nabati alami hasil perasan buah zaitun, bebas dari unsur hewani dan berkhasiat tinggi.',
+    thibbuNabawi: [
+      {
+        name: 'Minyak Zaitun',
+        nameAr: 'زيت الزيتon',
+        benefits: 'Mengandung lemak tak jenuh tunggal tinggi yang menjaga kesehatan jantung, melembapkan kulit kering, dan antiinflamasi otot.',
+        hadith: 'Konsumsilah minyak zaitun dan berminyaklah dengannya, karena ia berasal dari pohon yang berkah. (HR. Tirmidzi no. 1851).'
+      }
+    ]
+  },
+  kurma: {
+    type: 'ingredient',
+    name: 'Ekstrak Kurma / Kurma (Dates)',
+    code: '',
+    status: 'halal',
+    label: 'Halal Murni',
+    emoji: '✅',
+    reason: 'Buah nabati manis alami yang kaya serat, zat besi, dan kalium, sangat suci dan dianjurkan.',
+    thibbuNabawi: [
+      {
+        name: 'Kurma',
+        nameAr: 'التمر',
+        benefits: 'Memulihkan energi dengan cepat, mencegah kram otot, menguatkan fungsi rahim, dan menangkal efek radikal bebas.',
+        hadith: 'Barangsiapa mengonsumsi tujuh butir kurma Ajwa di pagi hari, tidak akan membahayakannya racun maupun sihir. (HR. Bukhari no. 5445).'
+      }
+    ]
+  },
+  habbatussauda: {
+    type: 'ingredient',
+    name: 'Jintan Hitam (Black Seed Oil / Powder)',
+    code: '',
+    status: 'halal',
+    label: 'Halal Murni',
+    emoji: '✅',
+    reason: 'Rempah biji-bijian herbal nabati, mutlak halal dan berkhasiat sebagai imunostimulan tubuh.',
+    thibbuNabawi: [
+      {
+        name: 'Habbatussauda',
+        nameAr: 'الحبة السوداء',
+        benefits: 'Meregulasi reaksi alergi, meredakan gejala asma/sesak ringan, mengatasi kembung, dan meningkatkan pertahanan tubuh.',
+        hadith: 'Sesungguhnya pada jintan hitam terdapat obat untuk segala macam penyakit, kecuali kematian. (HR. Bukhari no. 5688).'
+      }
+    ]
+  },
+  gelatin_babi: {
+    type: 'ingredient',
+    name: 'Pork Gelatin / Lard',
+    code: 'Porcine',
+    status: 'haram',
+    label: 'Haram Mutlak',
+    emoji: '❌',
+    reason: 'Mengandung turunan unsur tubuh babi. Haram dikonsumsi atau digunakan umat Muslim berdasarkan hukum Islam syar\'i.',
+    thibbuNabawi: []
+  },
+  alkohol: {
+    type: 'ingredient',
+    name: 'Kandungan Etanol / Alkohol Industri',
+    code: 'Ethanol',
+    status: 'haram',
+    label: 'Haram / Perlu Dihindari',
+    emoji: '❌',
+    reason: 'Jika digunakan dalam kadar tinggi pada produk konsumsi makanan/minuman yang memabukkan, hukumnya adalah haram.',
+    thibbuNabawi: []
+  }
+};
+
+// 2. KERNEL LOCAL ENGINE (Menggantikan scanner-service eksternal)
+function localAnalyzeIngredients(inputText) {
+  const inputLower = inputText.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''); // bersihkan spasi/simbol
+  
+  let detectedIngredients = [];
+  let detectedThibbuNabawi = [];
+  let finalStatus = 'unknown';
+  let finalLabel = 'Tidak Diketahui';
+  let finalEmoji = '❓';
+
+  // Lakukan scanning teks berdasarkan kunci database
+  for (const [key, data] of Object.entries(KNOWLEDGE_BASE_SCANNER)) {
+    if (inputLower.includes(key) || (data.code && inputLower.includes(data.code.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')))) {
+      detectedIngredients.push({
+        name: data.name,
+        code: data.code,
+        status: data.status,
+        reason: data.reason
+      });
+
+      if (data.thibbuNabawi && data.thibbuNabawi.length > 0) {
+        detectedThibbuNabawi.push(...data.thibbuNabawi);
+      }
+    }
+  }
+
+  // Tentukan status kehalalan kolektif produk
+  if (detectedIngredients.length > 0) {
+    const hasHaram = detectedIngredients.some(i => i.status === 'haram');
+    const hasSyubhat = detectedIngredients.some(i => i.status === 'syubhat');
+
+    if (hasHaram) {
+      finalStatus = 'haram';
+      finalLabel = 'Mengandung Bahan Haram';
+      finalEmoji = '❌';
+    } else if (hasSyubhat) {
+      finalStatus = 'syubhat';
+      finalLabel = 'Mengandung Bahan Syubhat';
+      finalEmoji = '⚠️';
+    } else {
+      finalStatus = 'halal';
+      finalLabel = 'Bahan Aman & Halal';
+      finalEmoji = '✅';
+    }
+  }
+
+  return {
+    ingredients: detectedIngredients,
+    thibbuNabawi: detectedThibbuNabawi,
+    halalResult: {
+      status: finalStatus,
+      label: finalLabel,
+      emoji: finalEmoji
+    }
+  };
+}
 
 export function render() {
   const history = getState('scanHistory') || [];
@@ -27,7 +220,6 @@ export function render() {
       <h1 class="text-2xl font-bold mb-2">🔍 Smart Scanner</h1>
       <p class="text-muted mb-6">Pindai label produk untuk cek kehalalan dan kandungan</p>
 
-      <!-- Scanner viewport -->
       <div class="scanner-viewport" id="scannerViewport" style="display:none">
         <div id="scannerReader"></div>
       </div>
@@ -37,7 +229,6 @@ export function render() {
         <button class="btn btn-danger btn-lg" id="stopScanBtn" style="display:none">⏹️ Stop</button>
       </div>
 
-      <!-- Manual Input -->
       <div class="card mb-6">
         <h3 class="font-semibold mb-3">✍️ Input Manual</h3>
         <p class="text-sm text-muted mb-3">Ketik nama bahan atau kode E-number untuk cek kehalalan</p>
@@ -47,20 +238,17 @@ export function render() {
         </div>
       </div>
 
-      <!-- Result -->
       <div id="scanResult" style="display:none">
         <div class="halal-status" id="halalStatusBadge"></div>
         
         <div id="ingredientDetails" class="card mb-4"></div>
         
-        <!-- Thibbun Nabawi Context -->
         <div id="thibbuNabawiContext" style="display:none" class="card mb-4">
           <h3 class="font-semibold mb-3" style="color:var(--emerald)">🌿 Konteks Thibbun Nabawi</h3>
           <div id="thibbuNabawiContent"></div>
         </div>
       </div>
 
-      <!-- History -->
       <h2 class="text-lg font-bold mt-8 mb-4">📋 Riwayat Scan</h2>
       <div id="scanHistoryList">
         ${history.length > 0 ? history.slice(0, 10).map(h => `
@@ -75,14 +263,6 @@ export function render() {
         `).join('') : '<p class="text-sm text-muted text-center p-4">Belum ada riwayat scan</p>'}
       </div>
     </main>
-
-    <nav class="bottom-nav hide-desktop">
-      <button class="bottom-nav-item" data-link="/dashboard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Beranda</span></button>
-      <button class="bottom-nav-item" data-link="/chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>AI Chat</span></button>
-      <button class="bottom-nav-item" data-link="/fitness"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg><span>Kebugaran</span></button>
-      <button class="bottom-nav-item" data-link="/encyclopedia"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Ensiklopedia</span></button>
-      <button class="bottom-nav-item" data-link="/profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profil</span></button>
-    </nav>
   `;
 }
 
@@ -93,7 +273,7 @@ export function onMount() {
   const manualInput = document.getElementById('manualInput');
   const manualBtn = document.getElementById('manualCheckBtn');
 
-  // Start barcode scan
+  // Start barcode/kamera scan
   startBtn?.addEventListener('click', async () => {
     try {
       viewport.style.display = 'block';
@@ -101,7 +281,7 @@ export function onMount() {
       stopBtn.style.display = 'inline-flex';
 
       await initScanner('scannerReader', (text) => {
-        processResult(text);
+        processResult(text); // Mengirim hasil teks dari barcode
         handleStopScan();
       });
       scannerRunning = true;
@@ -113,7 +293,6 @@ export function onMount() {
     }
   });
 
-  // Stop scan
   stopBtn?.addEventListener('click', handleStopScan);
 
   function handleStopScan() {
@@ -124,7 +303,7 @@ export function onMount() {
     stopBtn.style.display = 'none';
   }
 
-  // Manual check
+  // Manual check button click
   manualBtn?.addEventListener('click', () => {
     const text = manualInput?.value.trim();
     if (!text) return;
@@ -138,22 +317,23 @@ export function onMount() {
     }
   });
 
+  // CORE PROCESSOR UTAMA (Memproses data lokal terintegrasi)
   function processResult(text) {
-    const { ingredients, thibbuNabawi } = analyzeIngredients(text);
-    const halalResult = checkHalalStatus(ingredients);
+    // Jalankan mesin penyaring data lokal menggantikan fungsi service lama
+    const { ingredients, thibbuNabawi, halalResult } = localAnalyzeIngredients(text);
 
-    // Show result area
+    // Buka container area hasil
     document.getElementById('scanResult').style.display = 'block';
 
-    // Halal badge
+    // Update Banner Badge Halal Utama
     const badge = document.getElementById('halalStatusBadge');
     badge.className = `halal-status ${halalResult.status}`;
     badge.innerHTML = `
-      <div style="font-size:48px">${halalResult.emoji || '❓'}</div>
-      <div class="mt-2 text-2xl font-bold">${halalResult.label || 'Tidak Diketahui'}</div>
+      <div style="font-size:48px">${halalResult.emoji}</div>
+      <div class="mt-2 text-2xl font-bold">${halalResult.label}</div>
     `;
 
-    // Ingredient details
+    // Render Detail Komposisi Bahan Terdeteksi
     const details = document.getElementById('ingredientDetails');
     if (ingredients.length > 0) {
       details.innerHTML = `
@@ -162,7 +342,7 @@ export function onMount() {
           <div class="ingredient-item">
             <div>
               <div class="font-medium">${i.name} ${i.code ? `(${i.code})` : ''}</div>
-              <div class="text-xs text-muted">${i.reason || ''}</div>
+              <div class="text-xs text-muted">${i.reason}</div>
             </div>
             <span class="badge ${i.status === 'halal' ? 'badge-emerald' : i.status === 'haram' ? 'badge-danger' : 'badge-gold'}">${i.status.toUpperCase()}</span>
           </div>
@@ -170,23 +350,23 @@ export function onMount() {
       `;
     } else {
       details.innerHTML = `
-        <p class="text-sm text-muted text-center p-4">Tidak ada bahan yang cocok di database. Coba ketik nama bahan yang lebih spesifik.</p>
+        <h3 class="font-semibold mb-2">❓ Hasil Analisis</h3>
+        <p class="text-sm text-muted p-2">Kandungan tidak terdaftar secara spesifik di database herbal/aditif kami. Jika produk memiliki logo sertifikasi resmi BPOM/MUI, produk tersebut aman untuk digunakan.</p>
       `;
     }
 
-    // Thibbun Nabawi context
+    // Render Blok Hubungan Thibbun Nabawi (Jika ada)
     const tnCtx = document.getElementById('thibbuNabawiContext');
     const tnContent = document.getElementById('thibbuNabawiContent');
     if (thibbuNabawi.length > 0) {
       tnCtx.style.display = 'block';
       tnContent.innerHTML = thibbuNabawi.map(tn => {
-        // Find encyclopedia article if available
         const article = encyclopediaArticles?.find(a => a.title.toLowerCase().includes(tn.name.toLowerCase()));
         return `
-          <div class="p-3 mb-2" style="background:var(--emerald-glow);border-radius:var(--radius-md)">
-            <div class="font-semibold">${tn.name} ${tn.nameAr ? `<span lang="ar" class="font-amiri">(${tn.nameAr})</span>` : ''}</div>
-            <p class="text-sm mt-1">${tn.benefits}</p>
-            ${tn.hadith ? `<p class="text-xs text-muted mt-1">📎 ${tn.hadith}</p>` : ''}
+          <div class="p-3 mb-2" style="background:rgba(13,107,61,0.08); border-radius:8px">
+            <div class="font-semibold">${tn.name} ${tn.nameAr ? `<span lang="ar" style="font-family:serif; float:right">${tn.nameAr}</span>` : ''}</div>
+            <p class="text-sm mt-1" style="color:#2b2b2b">${tn.benefits}</p>
+            ${tn.hadith ? `<p class="text-xs text-muted mt-2" style="font-style:italic">📎 Hadis: ${tn.hadith}</p>` : ''}
             ${article ? `<button class="btn btn-sm btn-outline mt-2" data-link="/encyclopedia">📖 Baca di Ensiklopedia</button>` : ''}
           </div>
         `;
@@ -195,11 +375,11 @@ export function onMount() {
       tnCtx.style.display = 'none';
     }
 
-    // Save to history & gamification
+    // Eksekusi Logika Penyimpanan Riwayat & Gamifikasi Poin
     saveScanResult(text, halalResult);
-    addPoints('scan_product', `Scan: ${text.substring(0, 30)}`);
+    addPoints('scan_product', `Scan: ${text.substring(0, 25)}`);
 
-    // Scroll to result
+    // Geser layar ke area hasil dengan smooth animation
     document.getElementById('scanResult')?.scrollIntoView({ behavior: 'smooth' });
   }
 }
