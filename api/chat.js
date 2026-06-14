@@ -480,18 +480,18 @@ export default async function handler(req, res) {
   const inputLower = message.toLowerCase();
 
   // 2. CHECK LOGIC (Mencocokkan kata kunci gejala)
-  // 2. CHECK LOGIC (Mencocokkan kata kunci gejala)
+// 2. CHECK LOGIC (Mencocokkan kata kunci gejala secara akurat dengan KNOWLEDGE_BASE)
   let matchedKey = null;
 
   if (inputLower.includes('demam') || inputLower.includes('meriang') || inputLower.includes('panas')) {
     matchedKey = 'demam';
-  } else if (inputLower.includes('batuk') || inputLower.includes('dahak') || inputLower.includes('tenggorokan gatal') || inputLower.includes('radang tenggorokan')) {
+  } else if (inputLower.includes('batuk') || inputLower.includes('dahak') || inputLower.includes('tenggorokan gatal') || inputLower.includes('radang tenggorokan') || inputLower.includes('tenggorokan_gatal') || inputLower.includes('radang_tenggorokan')) {
     matchedKey = 'batuk';
   } else if (inputLower.includes('pusing') || inputLower.includes('sakit kepala') || inputLower.includes('migrain') || inputLower.includes('nyut')) {
     matchedKey = 'pusing';
-  } else if (inputLower.includes('perut') || inputLower.includes('lambung') || inputLower.includes('kram perut') || inputLower.includes('kembung')) {
+  } else if (inputLower.includes('perut') || inputLower.includes('kram perut') || inputLower.includes('kembung') || inputLower.includes('diare') || inputLower.includes('menceret') || inputLower.includes('kram_perut') || inputLower.includes('kembung_perut')) {
     matchedKey = 'perut';
-  } else if (inputLower.includes('mual') || inputLower.includes('eneg') || inputLower.includes('maag') || inputLower.includes('muntah')) {
+  } else if (inputLower.includes('mual') || inputLower.includes('eneg') || inputLower.includes('maag') || inputLower.includes('muntah') || inputLower.includes('nyeri ulu hati') || inputLower.includes('nyeri_ulu_hati')) {
     matchedKey = 'mual';
   } else if (inputLower.includes('luka') || inputLower.includes('lecet') || inputLower.includes('tergores')) {
     matchedKey = 'luka';
@@ -499,10 +499,56 @@ export default async function handler(req, res) {
     matchedKey = 'lemas';
   } else if (inputLower.includes('menggigil') || inputLower.includes('kedinginan')) {
     matchedKey = 'menggigil';
-  } else if (inputLower.includes('telinga') || inputLower.includes('nyeri telinga')) {
-    matchedKey = 'sakit_telinga';
-  } else if (inputLower.includes('pilek') || inputLower.includes('hidung') || inputLower.includes('flu')) {
+  } else if (inputLower.includes('pilek') || inputLower.includes('hidung') || inputLower.includes('flu') || inputLower.includes('bersin') || inputLower.includes('sinusitis') || inputLower.includes('mimisan') || inputLower.includes('sesak')) {
     matchedKey = 'pilek';
+  } else if (inputLower.includes('leher') || inputLower.includes('sakit leher') || inputLower.includes('leher kaku') || inputLower.includes('leher_kaku')) {
+    // Dipetakan ke 'sakit_leher' karena di database bagian bawah tertulis sakit_leher
+    matchedKey = 'sakit_leher'; 
+  } else if (inputLower.includes('telinga') || inputLower.includes('nyeri telinga') || inputLower.includes('telinga berdengung') || inputLower.includes('telinga gatal')) {
+    // Dipetakan ke 'sakit_telinga' sesuai key di database kamu
+    matchedKey = 'sakit_telinga';
+  } else if (inputLower.includes('gigi') || inputLower.includes('sakit gigi') || inputLower.includes('gusi') || inputLower.includes('gusi berdarah')) {
+    matchedKey = 'sakit_gigi';
+  } else if (inputLower.includes('sariawan') || inputLower.includes('bau mulut') || inputLower.includes('mulut')) {
+    matchedKey = 'sariawan';
+  } else if (inputLower.includes('gatal') || inputLower.includes('panu') || inputLower.includes('kutu air') || inputLower.includes('biang keringat')) {
+    matchedKey = 'gatal';
+  } else if (inputLower.includes('bisul')) {
+    matchedKey = 'bisul';
+  } else if (inputLower.includes('jerawat')) {
+    matchedKey = 'jerawat';
+  } else if (inputLower.includes('kulit kering') || inputLower.includes('kulit_kering')) {
+    matchedKey = 'kulit_kering';
+  } else if (inputLower.includes('ketombe') || inputLower.includes('rambut rontok') || inputLower.includes('rambut')) {
+    matchedKey = 'ketombe';
+  } else if (inputLower.includes('luka bakar') || inputLower.includes('luka_bakar')) {
+    matchedKey = 'luka_bakar_ringan';
+  } else if (inputLower.includes('lebam') || inputLower.includes('memar')) {
+    matchedKey = 'lebam';
+  } else if (inputLower.includes('kapalan') || inputLower.includes('mata ikan')) {
+    matchedKey = 'kapalan';
+  } else if (inputLower.includes('tumit') || inputLower.includes('tumit pecah')) {
+    matchedKey = 'tumit_pecah';
+  } else if (inputLower.includes('kesemutan') || inputLower.includes('kram otot')) {
+    matchedKey = 'kram_otot';
+  } else if (inputLower.includes('mata lelah') || inputLower.includes('mata merah') || inputLower.includes('mata kering')) {
+    matchedKey = 'mata_lelah';
+  } else if (inputLower.includes('berkeringat malam') || inputLower.includes('kurang tidur') || inputLower.includes('insomnia')) {
+    matchedKey = 'kurang_tidur';
+  } else if (inputLower.includes('kurang darah') || inputLower.includes('anemia')) {
+    matchedKey = 'kurang_darah';
+  } else if (inputLower.includes('obesitas') || inputLower.includes('gemuk') || inputLower.includes('berat badan')) {
+    matchedKey = 'obesitas';
+  } else if (inputLower.includes('alergi')) {
+    matchedKey = 'alergi';
+  } else if (inputLower.includes('ngorok') || inputLower.includes('mendengkur')) {
+    matchedKey = 'ngorok';
+  } else if (inputLower.includes('wasir')) {
+    matchedKey = 'wasir_ringan';
+  } else if (inputLower.includes('cegukan')) {
+    matchedKey = 'cegukan';
+  } else if (inputLower.includes('keracunan')) {
+    matchedKey = 'keracunan_makanan_ringan';
   }
 
   // 3. GENERATE RESPONSE BASED ON RULES
