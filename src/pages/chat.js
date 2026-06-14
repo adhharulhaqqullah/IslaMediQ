@@ -18,6 +18,16 @@ const SUGGESTIONS = [
   'Bagaimana tips menjaga imunitas tubuh?',
 ];
 
+// Daftar kata kunci gejala untuk auto-suggest
+const GEJALA_KEYWORDS = [
+  'demam', 'panas', 'meriang',
+  'batuk', 'dahak', 'tenggorokan gatal',
+  'pusing', 'sakit kepala', 'migrain',
+  'sakit perut', 'kembung', 'diare', 'menceret',
+  'mual', 'muntah', 'eneg', 'maag',
+  'luka', 'lecet', 'berdarah', 'tergores'
+];
+
 export function render() {
   return `
     <div class="chat-page">
@@ -59,7 +69,9 @@ export function render() {
 
       <!-- Input -->
       <div class="chat-input-area">
-        <textarea id="chatInput" placeholder="Ketik pertanyaan kesehatan Anda..." rows="1"></textarea>
+        <textarea id="chatInput" placeholder="Ceritakan gejala Anda (misalnya: demam, batuk, pusing, sakit perut, mual, atau luka)..." rows="1"></textarea>
+        <!-- Auto-suggest keywords -->
+        <div id="keywordSuggestions" style="display:none;padding:6px;background:var(--surface-secondary);border-radius:8px;margin-bottom:8px;gap:6px;flex-wrap:wrap;flex-direction:row"></div>
         <button class="btn btn-primary btn-icon" id="sendBtn" title="Kirim">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
@@ -74,6 +86,7 @@ export function onMount() {
   const sendBtn = document.getElementById('sendBtn');
   const suggestionsEl = document.getElementById('chatSuggestions');
   const clearBtn = document.getElementById('clearChatBtn');
+  const keywordSuggestionsEl = document.getElementById('keywordSuggestions');
 
   // Load history
   chatHistory = getState('chatHistory') || [];
@@ -135,10 +148,38 @@ export function onMount() {
     }
   });
 
-  // Auto-resize textarea
+  // Auto-resize textarea & keyword suggestions
   inputEl.addEventListener('input', () => {
     inputEl.style.height = 'auto';
     inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+
+    // Auto-suggest keywords
+    const value = inputEl.value.trim();
+    if (value.length > 0) {
+      const filtered = GEJALA_KEYWORDS.filter(keyword =>
+        keyword.toLowerCase().includes(value.toLowerCase())
+      );
+      
+      if (filtered.length > 0) {
+        keywordSuggestionsEl.innerHTML = filtered.map(keyword => 
+          `<button class="chip" style="background:var(--primary-light);color:var(--primary);cursor:pointer;padding:6px 12px;border-radius:16px;font-size:var(--text-xs);font-weight:500;border:none" data-keyword="${keyword}">${keyword}</button>`
+        ).join('');
+        keywordSuggestionsEl.style.display = 'flex';
+        
+        // Add click listeners to keyword suggestions
+        keywordSuggestionsEl.querySelectorAll('[data-keyword]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            inputEl.value = btn.dataset.keyword;
+            keywordSuggestionsEl.style.display = 'none';
+            handleSend();
+          });
+        });
+      } else {
+        keywordSuggestionsEl.style.display = 'none';
+      }
+    } else {
+      keywordSuggestionsEl.style.display = 'none';
+    }
   });
 
   // Suggestion chips

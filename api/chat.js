@@ -1,9 +1,3 @@
-/* ============================================================
-   IslaMediQ — Rule-Based API Endpoint: /api/chat
-   Sistem pakar sederhana menggunakan pencocokan kata kunci (keywords)
-   100% Stabil, Bebas Limit, Instan, dan Tanpa API Key Luar
-   ============================================================ */
-
 // 1. KNOWLEDGE BASE (Pangkalan Data Gejala, Hadis Shahih, dan Rujukan)
 const KNOWLEDGE_BASE = {
   demam: {
@@ -97,8 +91,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // FALLBACK RESPONSE (Jika kata kunci tidak dikenali atau bukan topik kesehatan)
-  const fallbackMessage = "Assalamu'alaikum! Saya Khusnuzon, asisten kesehatan AI dari IslaMediQ. Maaf, saya tidak mendeteksi kata kunci gejala ringan yang spesifik (seperti demam, batuk, pusing, sakit perut, mual, atau luka ringan) dalam pesan Anda. \n\nPerlu diketahui bahwa saya hanya diprogram untuk membantu memberikan edukasi seputar topik kesehatan ringan. Jika Anda merasakan keluhan medis yang serius atau berkepanjangan, kami sangat menyarankan untuk segera berkonsultasi langsung dengan dokter atau fasilitas pelayanan kesehatan terdekat demi diagnosis yang pasti.";
+  // FALLBACK RESPONSE (Jika kata kunci gejala ringan tidak cocok/ditemukan)
+  const fallbackMessage = "Mohon maaf, Khusnuzon AI tidak mendeteksi gejala ringan yang sesuai dengan sistem panduan kami dalam pesan Anda.\n\nKarena aplikasi IslaMediQ ini hanya dirancang untuk membantu memberikan edukasi dan penanganan awal bagi keluhan atau gejala kesehatan yang bersifat RINGAN saja, kami sangat menyarankan Anda untuk **segera memeriksakan diri ke Puskesmas atau Rumah Sakit terdekat** demi mendapatkan pemeriksaan fisik langsung dan diagnosis pasti dari tenaga medis profesional. Jangan menunda pengobatan jika kondisi dirasa mengganggu.";
 
   return res.status(200).json({
     response: fallbackMessage,
