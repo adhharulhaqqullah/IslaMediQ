@@ -127,7 +127,7 @@ export function render() {
            <button class="btn btn-ghost btn-sm" data-link="/dashboard">Login</button>
            <button class="btn btn-primary btn-sm" data-link="/dashboard">Daftar</button>
          </div>
-         <button class="btn btn-primary btn-sm hide-desktop" data-link="/auth">Daftar</button>
+         <button class="btn btn-primary btn-sm hide-desktop" data-link="/dashboard">Daftar</button>
 
       <!-- ─── Hero ─── -->
       <section class="hero-section">
